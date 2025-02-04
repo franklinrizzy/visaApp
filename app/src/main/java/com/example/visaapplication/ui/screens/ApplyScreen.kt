@@ -23,7 +23,7 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
     var phoneNumber by remember { mutableStateOf("") }
     var countryCode by remember { mutableStateOf("+1") }
     var passportNumber by remember { mutableStateOf("") }
-    var countryOfPassport by remember { mutableStateOf("United States") }
+    var countryOfPassport by remember { mutableStateOf("Country of Residence") }
     var typeOfVisa by remember { mutableStateOf("") }
     var visaDuration by remember { mutableStateOf("") }
     var dateOfIssue by remember { mutableStateOf<Long?>(null) }
@@ -125,6 +125,7 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
             modifier = Modifier.fillMaxWidth()
         )
 
+        var showSnackbar by remember { mutableStateOf(false) }
         Button(
             onClick = {
                 val db = FirebaseFirestore.getInstance()
@@ -142,7 +143,9 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
 
                 db.collection("visaApplications")
                     .add(applicationData)
-                    .addOnSuccessListener { navController.navigate("home") }
+                    .addOnSuccessListener {
+                        showSnackbar = true
+                        navController.navigate("track") }
                     .addOnFailureListener { e -> println("Error: ${e.message}") }
             },
             modifier = Modifier
@@ -152,6 +155,19 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6650A4))
         ) {
             Text("Submit Application", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+        // Snackbar to show success message
+        if (showSnackbar) {
+            Snackbar(
+                modifier = Modifier.padding(16.dp),
+                action = {
+                    TextButton(onClick = { showSnackbar = false }) {
+                        Text("OK", color = Color.White)
+                    }
+                }
+            ) {
+                Text("Application submitted successfully!")
+            }
         }
     }
 
