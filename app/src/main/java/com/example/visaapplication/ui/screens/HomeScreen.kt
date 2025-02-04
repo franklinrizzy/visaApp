@@ -1,44 +1,22 @@
-//package com.example.visaapplication.ui.screens
-//
-//import androidx.compose.foundation.layout.*
-//import androidx.compose.material3.*
-//import androidx.compose.runtime.Composable
-//import androidx.compose.ui.Modifier
-//import androidx.compose.ui.unit.dp
-//import androidx.navigation.NavController
-//import androidx.compose.ui.Alignment
-//
-//@Composable
-//fun HomeScreen(navController: NavController) {
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .padding(16.dp),
-//        verticalArrangement = Arrangement.Center,
-//        horizontalAlignment = Alignment.CenterHorizontally
-//    ) {
-//        Button(onClick = { navController.navigate("apply") }) {
-//            Text("Apply Now")
-//        }
-//        Spacer(modifier = Modifier.height(16.dp))
-//        Button(onClick = { navController.navigate("track") }) {
-//            Text("Track Your Application")
-//        }
-//    }
-//}
-
 package com.example.visaapplication.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,65 +25,98 @@ import com.example.visaapplication.R
 
 @Composable
 fun HomeScreen(navController: NavController) {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
     ) {
-        // Background Image
-        Image(
-            painter = painterResource(id = R.drawable.bg_photo), // Replace with your background image
-            contentDescription = "Background Image",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop, // Scale the image to fill the screen
-            alpha = 0.7f
+        TopBar()
+        Spacer(modifier = Modifier.height(16.dp))
+
+        val visaDetails = listOf(
+            Triple(R.drawable.bg_photoae, "United Arab Emirates", "07 Feb, 05:30 AM" to "₹6,500"),
+            Triple(R.drawable.bg_photous, "United States", "15 Mar, 10:00 AM" to "₹12,000"),
+            Triple(R.drawable.bg_photouk, "United Kingdom", "20 Apr, 08:45 AM" to "₹9,000"),
+            Triple(R.drawable.bg_photoca, "Canada", "25 May, 02:15 PM" to "₹10,500")
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Greeting Section
-            Spacer(modifier = Modifier.height(64.dp)) // Move text lower
-            GreetingText()
-
-            Spacer(modifier = Modifier.weight(1f)) // Push buttons to the center
-            // Buttons
-            Button(onClick = { navController.navigate("apply") }) {
-                Text("Apply Now")
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { navController.navigate("track") }) {
-                Text("Track Your Application")
-            }
-            Spacer(modifier = Modifier.weight(1f)) // Push buttons to the middle vertically
+        visaDetails.forEach { (imageRes, country, info) ->
+            VisaCard(
+                imageRes = imageRes,
+                country = country,
+                estimatedDate = info.first,
+                price = info.second,
+                navController = navController
+            )
         }
     }
 }
 
 @Composable
-fun GreetingText() {
+fun TopBar() {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "Welcome Back, User!",
-            style = TextStyle(
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimary // Adjust text color for better contrast
-            ),
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = "What would you like to do today?",
-            style = TextStyle(
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onPrimary
-            ),
-            textAlign = TextAlign.Center
-        )
+        Card(
+            shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF6650a4)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Get Your Visa on Time",
+                    style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                SearchBar()
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchBar() {
+    var textState by remember { mutableStateOf(TextFieldValue("")) }
+    TextField(
+        value = textState,
+        onValueChange = { textState = it },
+        placeholder = { Text("Enter destination") },
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = TextFieldDefaults.textFieldColors(containerColor = Color.White)
+    )
+}
+
+@Composable
+fun VisaCard(imageRes: Int, country: String, estimatedDate: String, price: String, navController: NavController) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth().padding(8.dp),
+        elevation = CardDefaults.cardElevation(6.dp)
+    ) {
+        Column(modifier = Modifier.clickable { navController.navigate("apply") }) {
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = "Visa Image",
+                modifier = Modifier.fillMaxWidth().height(180.dp),
+                contentScale = ContentScale.Crop
+            )
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(text = country, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Get on $estimatedDate", fontSize = 14.sp, color = Color.Gray)
+                Text(text = price, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { navController.navigate("apply") },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Apply Now")
+                }
+            }
+        }
     }
 }
