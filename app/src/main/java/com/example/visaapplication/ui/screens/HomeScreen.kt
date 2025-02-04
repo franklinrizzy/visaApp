@@ -5,8 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,7 +17,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,22 +25,27 @@ import com.example.visaapplication.R
 
 @Composable
 fun HomeScreen(navController: NavController) {
+    var searchQuery by remember { mutableStateOf("") }
+
+    val visaDetails = listOf(
+        Triple(R.drawable.bg_photoae, "United Arab Emirates", "07 Feb, 05:30 AM" to "₹6,500"),
+        Triple(R.drawable.bg_photous, "United States", "15 Mar, 10:00 AM" to "₹22,000"),
+        Triple(R.drawable.bg_photouk, "United Kingdom", "20 Apr, 08:45 AM" to "₹9,000"),
+        Triple(R.drawable.bg_photoca, "Canada", "25 May, 02:15 PM" to "₹10,500"),
+        Triple(R.drawable.bg_photosp, "Singapore", "20 May, 02:15 PM" to "₹1,900")
+    )
+
+    val filteredVisas = visaDetails.filter { it.second.contains(searchQuery, ignoreCase = true) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        TopBar()
+        TopBar(searchQuery) { searchQuery = it }
         Spacer(modifier = Modifier.height(16.dp))
 
-        val visaDetails = listOf(
-            Triple(R.drawable.bg_photoae, "United Arab Emirates", "07 Feb, 05:30 AM" to "₹6,500"),
-            Triple(R.drawable.bg_photous, "United States", "15 Mar, 10:00 AM" to "₹12,000"),
-            Triple(R.drawable.bg_photouk, "United Kingdom", "20 Apr, 08:45 AM" to "₹9,000"),
-            Triple(R.drawable.bg_photoca, "Canada", "25 May, 02:15 PM" to "₹10,500")
-        )
-
-        visaDetails.forEach { (imageRes, country, info) ->
+        filteredVisas.forEach { (imageRes, country, info) ->
             VisaCard(
                 imageRes = imageRes,
                 country = country,
@@ -53,7 +58,7 @@ fun HomeScreen(navController: NavController) {
 }
 
 @Composable
-fun TopBar() {
+fun TopBar(searchQuery: String, onSearchChange: (String) -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -65,13 +70,13 @@ fun TopBar() {
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "Get Your Visa on Time",
+                    text = "Get Your Visas on Time",
                     style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-                SearchBar()
+                SearchBar(searchQuery, onSearchChange)
             }
         }
     }
@@ -79,14 +84,16 @@ fun TopBar() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBar() {
-    var textState by remember { mutableStateOf(TextFieldValue("")) }
+fun SearchBar(searchQuery: String, onSearchChange: (String) -> Unit) {
     TextField(
-        value = textState,
-        onValueChange = { textState = it },
+        value = searchQuery,
+        onValueChange = { onSearchChange(it) },
         placeholder = { Text("Enter destination") },
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
         shape = RoundedCornerShape(12.dp),
+        leadingIcon = {
+            Icon(Icons.Default.Search, contentDescription = "Search Icon", tint = Color.Gray)
+        },
         colors = TextFieldDefaults.textFieldColors(containerColor = Color.White)
     )
 }
@@ -111,7 +118,7 @@ fun VisaCard(imageRes: Int, country: String, estimatedDate: String, price: Strin
                 Text(text = price, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF4CAF50))
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = { navController.navigate("apply") },
+                    onClick = { navController.navigate("apply/${country}") },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Apply Now")

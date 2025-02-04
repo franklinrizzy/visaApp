@@ -12,7 +12,10 @@ fun AppNavGraph(navController: NavHostController) {
         composable("login") { LoginScreen(navController) }
         composable("signup") { SignupScreen(navController) }
         composable("home") { HomeScreen(navController) }
-        composable("apply") { ApplyScreen(navController) }
+        composable("apply/{selectedCountry}") { backStackEntry ->
+            val selectedCountry = backStackEntry.arguments?.getString("selectedCountry") ?: "Unknown"
+            ApplyScreen(navController, selectedCountry)
+        }
         composable("track") { TrackScreen(navController) }
         composable("profile") { ProfileScreen(navController) }
 //        composable("payment") { PaymentScreen() }
