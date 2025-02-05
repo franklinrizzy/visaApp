@@ -1,32 +1,86 @@
 package com.example.visaapplication.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.compose.ui.Alignment
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.QuerySnapshot
+import kotlinx.coroutines.tasks.await
 
 @Composable
 fun TrackScreen(navController: NavController) {
-    // Sample Data for Tracking
-    val applicationStatus = "Your visa application is under review."
+    val applications = remember { mutableStateListOf<VisaApplication>() }
+
+    LaunchedEffect(Unit) {
+        val db = FirebaseFirestore.getInstance()
+        val result = db.collection("visaApplications").get().await()
+        applications.clear()
+        applications.addAll(result.toObjects(VisaApplication::class.java))
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = applicationStatus,
-            style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        Button(onClick = { navController.navigate("home") }) {
-            Text("Back to Home")
+        Text(text = "Application Tracking", style = MaterialTheme.typography.titleLarge)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(applications) { application ->
+                ApplicationCard(application)
+            }
         }
     }
 }
+
+@Composable
+fun ApplicationCard(application: VisaApplication) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(6.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = "Country: ${application.selectedCountry}", style = MaterialTheme.typography.bodyLarge)
+            Text(text = "Applied Date: ${application.appliedDate}", style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            StatusBar(application.status)
+        }
+    }
+}
+
+@Composable
+fun StatusBar(status: String) {
+    val statuses = listOf("Applied", "Under Review", "Rejected", "Accepted")
+    val currentIndex = statuses.indexOf(status)
+
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+        statuses.forEachIndexed { index, label ->
+            val color = if (index <= currentIndex) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Surface(
+                    modifier = Modifier.size(12.dp),
+                    shape = MaterialTheme.shapes.small,
+                    color = color
+                ) {}
+                Text(text = label, style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+data class VisaApplication(
+    val selectedCountry: String = "",
+    val appliedDate: String = "",
+    val status: String = "Applied"
+)

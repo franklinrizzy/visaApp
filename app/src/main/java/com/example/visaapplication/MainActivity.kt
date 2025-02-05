@@ -67,10 +67,12 @@ import androidx.navigation.compose.rememberNavController
 import com.example.visaapplication.ui.navigation.AppNavGraph
 import com.example.visaapplication.ui.components.BottomNavBar
 import com.example.visaapplication.ui.theme.VisaApplicationTheme
+import com.google.firebase.FirebaseApp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseApp.initializeApp(this)
         setContent {
             VisaApplicationTheme {
                 val navController = rememberNavController()
