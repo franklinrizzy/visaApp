@@ -141,7 +141,8 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
                     "countryOfPassport" to countryOfPassport,
                     "visaType" to visaType,
                     "visaDuration" to visaDuration,
-                    "selectedCountry" to selectedCountry
+                    "selectedCountry" to selectedCountry,
+                    "status" to "Applied"
                 )
 
                 db.collection("visaApplications")
