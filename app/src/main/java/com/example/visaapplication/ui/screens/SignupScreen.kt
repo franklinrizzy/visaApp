@@ -4,9 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,20 +16,21 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
-import com.example.visaapplication.model.User
 
 @Composable
 fun SignupScreen(navController: NavController) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var phoneNumber by remember { mutableStateOf("") }
+    var dateOfBirth by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val auth = Firebase.auth
-    val db = Firebase.firestore
+    val db = FirebaseFirestore.getInstance()
 
     Column(
         modifier = Modifier
@@ -80,66 +79,49 @@ fun SignupScreen(navController: NavController) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Input Fields
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Name") },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name Icon") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Full Name") }, leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Name Icon") }, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email Icon") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email Icon") }, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password Icon") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = phoneNumber, onValueChange = { phoneNumber = it }, label = { Text("Mobile Number") }, leadingIcon = { Icon(Icons.Default.Phone, contentDescription = "Phone Icon") }, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
-                    label = { Text("Confirm Password") },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Confirm Password Icon") },
-                    visualTransformation = PasswordVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = dateOfBirth, onValueChange = { dateOfBirth = it }, label = { Text("Date of Birth (DD/MM/YYYY)") }, leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = "Calendar Icon") }, modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password Icon") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(value = confirmPassword, onValueChange = { confirmPassword = it }, label = { Text("Confirm Password") }, leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Confirm Password Icon") }, visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Error Message
                 if (errorMessage != null) {
-                    Text(
-                        text = errorMessage!!,
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    Text(text = errorMessage!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp))
                 }
 
                 // Sign Up Button
                 Button(
                     onClick = {
-                        if (name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty() && confirmPassword.isNotEmpty()) {
+                        if (name.isNotEmpty() && email.isNotEmpty() && phoneNumber.isNotEmpty() && dateOfBirth.isNotEmpty() && password.isNotEmpty() && confirmPassword.isNotEmpty()) {
                             if (password != confirmPassword) {
                                 errorMessage = "Passwords do not match!"
                             } else {
                                 auth.createUserWithEmailAndPassword(email, password)
                                     .addOnCompleteListener { task ->
                                         if (task.isSuccessful) {
-                                            val user = User(name, email, password)
                                             val userId = auth.currentUser?.uid
                                             if (userId != null) {
+                                                val user = hashMapOf(
+                                                    "name" to name,
+                                                    "email" to email,
+                                                    "phoneNumber" to phoneNumber,
+                                                    "dateOfBirth" to dateOfBirth,
+                                                    "userId" to userId
+                                                )
+
                                                 db.collection("users").document(userId).set(user)
                                                     .addOnSuccessListener {
                                                         navController.navigate("login") {

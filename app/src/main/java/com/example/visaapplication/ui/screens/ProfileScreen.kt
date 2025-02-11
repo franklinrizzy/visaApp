@@ -1,9 +1,12 @@
 package com.example.visaapplication.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
@@ -22,20 +26,46 @@ import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.tasks.await
+import java.util.*
+
+// User Data Model
+data class UserData(
+    val name: String = "",
+    val email: String = "",
+    val phoneNumber: String = "",
+    val dateOfBirth: String = "",
+    val profilePhotoUrl: String? = null
+)
 
 @Composable
 fun ProfileScreen(navController: NavController) {
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
+    val storageRef = FirebaseStorage.getInstance().reference
     val user = auth.currentUser
-    var userData by remember { mutableStateOf(UserData()) }
 
+    var userData by remember { mutableStateOf(UserData()) }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var uploadStatus by remember { mutableStateOf<String?>(null) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        selectedImageUri = uri
+        uri?.let { uploadProfilePicture(it, user?.uid, storageRef) }
+    }
+
+    // Load user data from Firestore
     LaunchedEffect(Unit) {
         user?.uid?.let { uid ->
-            db.collection("users").document(uid).get().addOnSuccessListener { document ->
-                document?.toObject(UserData::class.java)?.let {
-                    userData = it
+            try {
+                val document = db.collection("users").document(uid).get().await()
+                val data = document.toObject(UserData::class.java)
+                if (data != null) {
+                    userData = data
                 }
+            } catch (e: Exception) {
+                uploadStatus = "Failed to load profile: ${e.message}"
             }
         }
     }
@@ -47,33 +77,53 @@ fun ProfileScreen(navController: NavController) {
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
-            painter = rememberAsyncImagePainter(userData.profilePhotoUrl ?: "https://via.placeholder.com/150"),
-            contentDescription = "Profile Picture",
+        // Profile Image Section
+        Box(
             modifier = Modifier
-                .size(100.dp)
+                .size(120.dp)
                 .clip(CircleShape)
-                .clickable { /* Handle image selection */ },
-            contentScale = ContentScale.Crop
+                .clickable { imagePickerLauncher.launch("image/*") }
+        ) {
+            Image(
+                painter = rememberAsyncImagePainter(
+                    selectedImageUri ?: userData.profilePhotoUrl ?: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                ),
+                contentDescription = "Profile Picture",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(
+            text = "Tap to change profile picture",
+            fontSize = 14.sp,
+            color = Color.Gray
         )
 
         Spacer(modifier = Modifier.height(16.dp))
-
         Text(text = userData.name, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         Text(text = userData.email, fontSize = 16.sp, color = Color.Gray)
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Card(
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.fillMaxWidth()
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFEDE7F6)) // Light purple background
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                ProfileInfoItem(label = "Passport Number", value = userData.passportNumber)
                 ProfileInfoItem(label = "Phone Number", value = userData.phoneNumber)
                 ProfileInfoItem(label = "Date of Birth", value = userData.dateOfBirth)
                 Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = { /* Handle edit details */ }, modifier = Modifier.fillMaxWidth()) {
+
+                // Edit Profile Button
+                Button(
+                    onClick = { navController.navigate("edit_profile") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6650A4))
+                ) {
                     Icon(Icons.Default.Edit, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Edit Details")
@@ -83,12 +133,18 @@ fun ProfileScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = { /* Handle document upload */ }, modifier = Modifier.fillMaxWidth()) {
+        // Upload Documents Button
+        Button(
+            onClick = { navController.navigate("upload_documents") },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6650A4))
+        ) {
             Text("Upload Documents")
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Logout Button
         Button(
             onClick = {
                 auth.signOut()
@@ -112,11 +168,17 @@ fun ProfileInfoItem(label: String, value: String?) {
     }
 }
 
-data class UserData(
-    val name: String = "",
-    val email: String = "",
-    val passportNumber: String = "",
-    val phoneNumber: String = "",
-    val dateOfBirth: String = "",
-    val profilePhotoUrl: String? = null
-)
+// Function to Upload Profile Picture to Firebase Storage
+fun uploadProfilePicture(imageUri: Uri, userId: String?, storageRef: com.google.firebase.storage.StorageReference) {
+    if (userId == null) return
+
+    val profilePicRef = storageRef.child("profile_pictures/$userId.jpg")
+    profilePicRef.putFile(imageUri)
+        .addOnSuccessListener {
+            profilePicRef.downloadUrl.addOnSuccessListener { downloadUrl ->
+                // Update Firestore with the new profile picture URL
+                FirebaseFirestore.getInstance().collection("users").document(userId)
+                    .update("profilePhotoUrl", downloadUrl.toString())
+            }
+        }
+}

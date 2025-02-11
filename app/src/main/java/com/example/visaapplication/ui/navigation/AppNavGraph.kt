@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.visaapplication.ui.screens.*
+import com.example.visaapplication.ui.payment.*
 
 @Composable
 fun AppNavGraph(navController: NavHostController) {
@@ -18,6 +19,9 @@ fun AppNavGraph(navController: NavHostController) {
         }
         composable("track") { TrackScreen(navController) }
         composable("profile") { ProfileScreen(navController) }
-//        composable("payment") { PaymentScreen() }
+        composable("edit_profile") { EditProfileScreen(navController) }
+        composable("upload_documents") { UploadDocumentsScreen(navController) }
+        composable("dummy_payment") { DummyPaymentScreen(navController) }
+
     }
 }

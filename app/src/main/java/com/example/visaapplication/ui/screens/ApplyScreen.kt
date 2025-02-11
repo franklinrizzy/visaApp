@@ -21,17 +21,17 @@ import java.util.*
 fun ApplyScreen(navController: NavController, selectedCountry: String) {
     var applicantName by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
-    var countryCode by remember { mutableStateOf("+1") }
     var passportNumber by remember { mutableStateOf("") }
-    var countryOfPassport by remember { mutableStateOf("Country of Residence") }
-    var typeOfVisa by remember { mutableStateOf("") }
+    var countryOfPassport by remember { mutableStateOf("Select Country") }
+    var visaType by remember { mutableStateOf("Select Visa Type") }
     var visaDuration by remember { mutableStateOf("") }
     var dateOfIssue by remember { mutableStateOf<Long?>(null) }
     var expiryDate by remember { mutableStateOf<Long?>(null) }
     var showDatePicker by remember { mutableStateOf<Pair<Boolean, (Long?) -> Unit>?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val countries = listOf("Country of Residence", "United States", "Canada", "United Kingdom", "India", "Australia")
-    val countryCodes = listOf("+1", "+91", "+44", "+61", "+1")
+    val countries = listOf("Select Country", "United States", "Canada", "United Kingdom", "India", "Australia")
+    val visaTypes = listOf("Tourist", "Business", "Employment", "Student", "Transit", "Medical", "Conference", "Journalist")
 
     Column(
         modifier = Modifier
@@ -40,7 +40,12 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "Visa Application", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6650A4))
+        Text(
+            text = "Visa Application",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF6650A4)
+        )
 
         OutlinedTextField(
             value = applicantName,
@@ -49,24 +54,12 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
             modifier = Modifier.fillMaxWidth()
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            DropdownMenuBox(
-                options = countryCodes,
-                selectedOption = countryCode,
-                onOptionSelected = { countryCode = it },
-                modifier = Modifier.weight(1f)
-            )
-            OutlinedTextField(
-                value = phoneNumber,
-                onValueChange = { phoneNumber = it },
-                label = { Text("Phone Number") },
-                modifier = Modifier.weight(2f)
-            )
-        }
+        OutlinedTextField(
+            value = phoneNumber,
+            onValueChange = { phoneNumber = it.filter { char -> char.isDigit() } },
+            label = { Text("Phone Number") },
+            modifier = Modifier.fillMaxWidth()
+        )
 
         OutlinedTextField(
             value = passportNumber,
@@ -111,11 +104,10 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
             onOptionSelected = { countryOfPassport = it }
         )
 
-        OutlinedTextField(
-            value = typeOfVisa,
-            onValueChange = { typeOfVisa = it },
-            label = { Text("Type of Visa") },
-            modifier = Modifier.fillMaxWidth()
+        DropdownMenuBox(
+            options = visaTypes,
+            selectedOption = visaType,
+            onOptionSelected = { visaType = it }
         )
 
         OutlinedTextField(
@@ -125,18 +117,29 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
             modifier = Modifier.fillMaxWidth()
         )
 
+        if (errorMessage != null) {
+            Text(text = errorMessage!!, color = Color.Red, fontSize = 14.sp)
+        }
+
         var showSnackbar by remember { mutableStateOf(false) }
         Button(
             onClick = {
+                if (applicantName.isEmpty() || phoneNumber.isEmpty() || passportNumber.isEmpty() ||
+                    countryOfPassport == "Select Country" || visaType == "Select Visa Type" || visaDuration.isEmpty()
+                ) {
+                    errorMessage = "Please fill all required fields!"
+                    return@Button
+                }
+
                 val db = FirebaseFirestore.getInstance()
                 val applicationData = hashMapOf(
                     "applicantName" to applicantName,
-                    "phoneNumber" to "$countryCode$phoneNumber",
+                    "phoneNumber" to phoneNumber,
                     "passportNumber" to passportNumber,
                     "dateOfIssue" to dateOfIssue,
                     "expiryDate" to expiryDate,
                     "countryOfPassport" to countryOfPassport,
-                    "typeOfVisa" to typeOfVisa,
+                    "visaType" to visaType,
                     "visaDuration" to visaDuration,
                     "selectedCountry" to selectedCountry
                 )
@@ -145,7 +148,8 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
                     .add(applicationData)
                     .addOnSuccessListener {
                         showSnackbar = true
-                        navController.navigate("track") }
+                        navController.navigate("dummy_payment")
+                    }
                     .addOnFailureListener { e -> println("Error: ${e.message}") }
             },
             modifier = Modifier
@@ -156,7 +160,7 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
         ) {
             Text("Submit Application", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
-        // Snackbar to show success message
+
         if (showSnackbar) {
             Snackbar(
                 modifier = Modifier.padding(16.dp),

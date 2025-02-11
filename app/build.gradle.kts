@@ -61,18 +61,19 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.androidx.material.icons.extended)
 
-    implementation("androidx.navigation:navigation-compose:2.6.0")
-    implementation("androidx.compose.ui:ui:1.5.0")
-    implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation("androidx.navigation:navigation-compose:2.8.6")
+    implementation("androidx.compose.ui:ui:1.7.7")
+    implementation("androidx.navigation:navigation-compose:2.8.6")
     implementation("io.coil-kt.coil3:coil-compose:3.1.0")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.7.7")
+    implementation("androidx.compose.foundation:foundation:1.7.7")
+    implementation("androidx.compose.runtime:runtime:1.7.7")
 
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.8.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-storage")
-    // Stripe
-    implementation ("com.stripe:stripe-android:21.4.1")
 
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
