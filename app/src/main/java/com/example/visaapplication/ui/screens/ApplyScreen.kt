@@ -1,7 +1,9 @@
 package com.example.visaapplication.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
@@ -13,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
@@ -36,13 +39,14 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()), // Enable scrolling
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = "Visa Application",
-            fontSize = 24.sp,
+            fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF6650A4)
         )
@@ -101,13 +105,15 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
         DropdownMenuBox(
             options = countries,
             selectedOption = countryOfPassport,
-            onOptionSelected = { countryOfPassport = it }
+            onOptionSelected = { countryOfPassport = it },
+            modifier = Modifier.fillMaxWidth()
         )
 
         DropdownMenuBox(
             options = visaTypes,
             selectedOption = visaType,
-            onOptionSelected = { visaType = it }
+            onOptionSelected = { visaType = it },
+            modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
@@ -122,6 +128,8 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
         }
 
         var showSnackbar by remember { mutableStateOf(false) }
+        val auth = FirebaseAuth.getInstance()
+        val currentUser = auth.currentUser
         Button(
             onClick = {
                 if (applicantName.isEmpty() || phoneNumber.isEmpty() || passportNumber.isEmpty() ||
@@ -131,8 +139,11 @@ fun ApplyScreen(navController: NavController, selectedCountry: String) {
                     return@Button
                 }
 
+                val userId = currentUser?.uid ?: return@Button // Ensure user is logged in
+
                 val db = FirebaseFirestore.getInstance()
                 val applicationData = hashMapOf(
+                    "userId" to userId,
                     "applicantName" to applicantName,
                     "phoneNumber" to phoneNumber,
                     "passportNumber" to passportNumber,

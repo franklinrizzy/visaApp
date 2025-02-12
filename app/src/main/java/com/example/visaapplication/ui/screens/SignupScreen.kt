@@ -2,7 +2,9 @@ package com.example.visaapplication.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -36,14 +38,15 @@ fun SignupScreen(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF6650A4))
-            .padding(24.dp),
+            .padding(24.dp)
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Card(
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(16.dp)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),

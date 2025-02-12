@@ -7,11 +7,13 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,18 +21,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.font.FontWeight
 import androidx.navigation.NavController
 import coil3.compose.rememberAsyncImagePainter
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
-import java.util.*
 
-// User Data Model
 data class UserData(
     val name: String = "",
     val email: String = "",
@@ -70,92 +70,105 @@ fun ProfileScreen(navController: NavController) {
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(Color(0xFFF3F3F3))
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        contentAlignment = Alignment.TopCenter
     ) {
-        // Profile Image Section
-        Box(
-            modifier = Modifier
-                .size(120.dp)
-                .clip(CircleShape)
-                .clickable { imagePickerLauncher.launch("image/*") }
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Image(
-                painter = rememberAsyncImagePainter(
-                    selectedImageUri ?: userData.profilePhotoUrl ?: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                ),
-                contentDescription = "Profile Picture",
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
+            // Profile Image Section
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+                    .clickable { imagePickerLauncher.launch("image/*") }
+            ) {
+                Image(
+                    painter = rememberAsyncImagePainter(
+                        selectedImageUri ?: userData.profilePhotoUrl
+                        ?: "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                    ),
+                    contentDescription = "Profile Picture",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "Tap to change profile picture",
+                fontSize = 14.sp,
+                color = Color.Gray
             )
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "Tap to change profile picture",
-            fontSize = 14.sp,
-            color = Color.Gray
-        )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = userData.name, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(text = userData.email, fontSize = 16.sp, color = Color.Gray)
 
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = userData.name, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Text(text = userData.email, fontSize = 16.sp, color = Color.Gray)
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Card(
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFEDE7F6)) // Light purple background
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                ProfileInfoItem(label = "Phone Number", value = userData.phoneNumber)
-                ProfileInfoItem(label = "Date of Birth", value = userData.dateOfBirth)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Edit Profile Button
-                Button(
-                    onClick = { navController.navigate("edit_profile") },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6650A4))
+            // Profile Info Card
+            Card(
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .background(Color.White)
+                        .padding(16.dp)
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Edit Details")
+                    ProfileInfoItem(label = "Phone Number", value = userData.phoneNumber)
+                    ProfileInfoItem(label = "Date of Birth", value = userData.dateOfBirth)
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Edit Profile Button
+                    Button(
+                        onClick = { navController.navigate("edit_profile") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6650A4))
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Edit Details")
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Upload Documents Button
-        Button(
-            onClick = { navController.navigate("upload_documents") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6650A4))
-        ) {
-            Text("Upload Documents")
-        }
+            // Upload Documents Button
+            Button(
+                onClick = { navController.navigate("upload_documents") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6650A4))
+            ) {
+                Text("Upload Documents")
+            }
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-        // Logout Button
-        Button(
-            onClick = {
-                auth.signOut()
-                navController.navigate("login")
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
-        ) {
-            Icon(Icons.Default.Logout, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Sign Out")
+            // Logout Button
+            Button(
+                onClick = {
+                    auth.signOut()
+                    navController.navigate("login")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Sign Out")
+            }
         }
     }
 }

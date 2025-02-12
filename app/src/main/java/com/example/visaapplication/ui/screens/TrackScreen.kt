@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.coroutines.tasks.await
@@ -24,12 +25,20 @@ import java.util.*
 @Composable
 fun TrackScreen(navController: NavController) {
     val applications = remember { mutableStateListOf<VisaApplication>() }
+    val auth = FirebaseAuth.getInstance()
+    val user = auth.currentUser
 
     LaunchedEffect(Unit) {
         val db = FirebaseFirestore.getInstance()
-        val result = db.collection("visaApplications").get().await()
-        applications.clear()
-        applications.addAll(result.toObjects(VisaApplication::class.java))
+        user?.uid?.let { uid ->
+            val result = db.collection("visaApplications")
+                .whereEqualTo("userId", uid) // 🔹 Fetch only current user's applications
+                .get()
+                .await()
+
+            applications.clear()
+            applications.addAll(result.toObjects(VisaApplication::class.java))
+        }
     }
 
     Column(
@@ -55,9 +64,12 @@ fun TrackScreen(navController: NavController) {
         }
         Spacer(modifier = Modifier.height(16.dp))
 
+        if (applications.isEmpty()) {
+            Text("No applications found.", fontSize = 18.sp, color = Color.Gray)
+        } else {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             items(applications) { application ->
-                ApplicationCard(application)
+                ApplicationCard(application) }
             }
         }
     }
@@ -105,6 +117,7 @@ fun StatusBar(status: String) {
 }
 
 data class VisaApplication(
+    val userId: String = "",
     val selectedCountry: String = "",
     val appliedDate: String = "",
     val status: String = "Applied"
